@@ -7,73 +7,43 @@
 
 ## Project Overview
 
-This project explores the use of quantum computing for autonomous warehouse robot pathfinding.
 
-We compare a classical A* pathfinding algorithm with a quantum-assisted optimization approach using the Quantum Approximate Optimization Algorithm (QAOA).
-
-Our program uses A* to generate possible routes through a simulated warehouse. QAOA then evaluates these candidate routes using calculated energy costs and selects a route to minimize the cost.
-
-We test our implementation using a local quantum simulator and real IBM quantum hardware to examine its results, performance, and limitations.
 
 ## Project Structure
 
-| File | Description |
-|---|---|
-| `warehouse.py` | Defines the simulated warehouse layout and obstacles. |
-| `pathfinding.py` | Implements classical A* pathfinding and energy calculations. |
-| `quantum_optimizer.py` | Implements QAOA route optimization and quantum hardware execution. |
-| `visualization.py` | Displays the warehouse and robot paths. |
-| `check_setup.py` | Checks the project environment and setup. |
+warehouse.py - The basic layout of the warehouse grid.
+
+pathfinding.py - How the robot moves and takes a path to the goal using the A* method of pathfinding
+
+quantum_optimizer.py - Uses 5 different possible paths the robot could take, converts the energy in binary values so the quantum computer can decide which path is best.
+
+visualization.py - display the calculation and animation of three randomly generated warehouse layouts.
+
 
 ## How It Works
 
 ### 1. Warehouse Environment
 
-The warehouse is represented as a 12x12 grid containing open spaces, obstacles, and charging stations. Robots navigate through the grid while avoiding obstacles.
+The program generates a 12x12 grid of spaces. There are randomly generated obstacles in different spaces, and the robot is assigned a starting point at the bottom of the grid. The obstacles also have inflated boundaries around them so that the robot doesn't cut corners of them and it doesn't get to close to an obstacle.
 
 ### 2. Classical Pathfinding (A*)
 
-The classical implementation uses the A* search algorithm to find routes between a robot's starting position and destination.
-
-The algorithm accounts for:
-- Straight and diagonal movement.
-- Additional energy costs for changing direction.
-- Inflated obstacles to maintain clearance around obstacles.
-- Temporary blocked cells to generate alternative routes.
+The robot uses the A* pathfinding algorithm to generate possible routes through the warehouse while avoiding obstacles. It evaluates each position using:
+-G-cost: Distance traveled from the starting position.
+-H-cost (Heuristic): Estimated distance remaining to the destination.
+-F-cost: Combined cost used to determine which position to explore next.
 
 ### 3. Energy Calculation
 
-Each candidate route is assigned an energy cost based on its movement and direction changes.
-
-- Straight movement: 1.0 energy units.
-- Diagonal movement: 1.414 energy units.
-- Direction change: 0.5 additional energy units.
+Straight movement - 1 energy
+Diagonal movement - sqrt(2) or 1.4 energy
+Turn penalty - 0.5, used to calculate the path with the least amount of turns.
 
 ### 4. Quantum Optimization (QAOA)
 
-The quantum implementation uses Qiskit and the Quantum Approximate Optimization Algorithm (QAOA).
-
-A* first generates a baseline route and up to three alternative routes. These routes are converted into a binary optimization problem in which each route has a corresponding binary variable.
-
-A constraint requires exactly one route to be selected. The objective is to minimize the calculated energy cost.
-
-### 5. Quantum Hardware Testing
-
-The project also includes an implementation that submits a QAOA circuit to a real IBM quantum computer.
-
-The hardware circuit is transpiled for the selected backend and executed using 1,024 shots. The resulting measurement bitstrings are analyzed to identify outcomes that select exactly one route.
-
-The current hardware implementation applies this constraint through classical filtering after measurement rather than encoding it directly into the quantum cost operator. This is an important limitation of the current implementation.
+A number of possible routes are given and converted into binary values. The quantum computer uses those values and determines which one is the least energy taken / best path.
 
 ### Hardware Results
-
-The project completed six hardware experiments across two sets of three warehouse scenarios using IBM's ibm_marrakesh processor.
-
-Each experiment used 1,024 measurement shots. The number of binary variables varied depending on how many candidate routes were generated for each scenario.
-
-The measurement results contained both valid and invalid route selections. Valid outcomes selected exactly one route, while invalid outcomes selected either zero or multiple routes.
-
-The current hardware implementation filters the measurement results to identify valid outcomes. It then selects the valid outcome with the lowest calculated energy cost. This demonstrates a limitation of the current implementation, since the one-route constraint is not directly encoded into the hardware cost operator.
 
 | Test | Run | Binary Variables | Valid Outcomes | ValidPercentage |
 |---|---|---|-------------|--------|
@@ -84,70 +54,102 @@ The current hardware implementation filters the measurement results to identify 
 | 2 | 2 | 4 | 127 / 1,024 | 12.40% |
 | 2 | 3 | 3 | 71 / 1,024  | 6.93%  |
 
-The valid percentage represents the proportion of measurement shots that selected exactly one route. These percentages describe the measured output distribution; they do not demonstrate that the hardware successfully enforced the constraint during optimization.
-
 ## Installation
 
 Install the required Python packages:
 
-```bash
+
 pip install -r requirements.txt
-```
 
 ## Running the Project
 
 Launch the visual warehouse comparison:
 
-```bash
 python visualization.py
-```
 
 Run the classical pathfinding tests:
 
-```bash
 python pathfinding.py
-```
 
 Run the quantum optimization implementation:
 
-```bash
 python quantum_optimizer.py
-```
 
 ## Results and Limitations
 
-### Simulator Results
-
-In the current simulator test, QAOA successfully selected Route 0 from the available candidate routes.
-
-- Selected route energy: 11.828
-- Average QAOA execution time: 0.9525 seconds
-- Optimization status: SUCCESS
-
-The selected route traveled from [10, 5] to [0, 5] while avoiding warehouse obstacles.
-
 ### Classical A* Results
 
-Two robots were tested using the classical A* algorithm.
+Run 1:
 
-- Robot 1 execution time: 0.001204 seconds.
-- Robot 2 execution time: 0.001012 seconds.
-- Both routes had an energy cost of 11.828.
+Layout 1: 
+Energy: 9.328
+Computation time: 0.0003s
+Layout 2:
+Energy: 11.828
+Computation time: 0.0015s  
+Layout 3:
+Energy: 14.828
+Computation time: 0.0034s 
+Run 2:
 
-Both robots exceeded the available battery usage limit of 8 energy units. The battery management system identified charging stations and generated routes to them.
+Layout 1: 
+Energy: 15.242
+Computation time: 0.0043s  
+Layout 2:
+Energy: 25.570
+Computation time: 0.0108s
+Layout 3:
+Energy: 8.414
+Computation time: 0.0007s
+
+### Quantum Results
+
+Run 1:
+
+Layout 1: 
+Energy: 9.328
+Computation time: 19.0923s
+Layout 2:
+Energy: 11.828
+Computation time: 14.7987s  
+Layout 3:
+Energy: 14.828
+Computation time: 15.3669s 
+Run 2:
+
+Layout 1: 
+Energy: 15.242
+Computation time: 19.6184s  
+Layout 2:
+Energy: 25.570
+Computation time: 17.9714s
+Layout 3:
+Energy: 8.414
+Computation time: 17.8090s
+
 
 ### Comparison
 
-In the current test, both A* and QAOA selected routes with an energy cost of 11.828. A* completed its pathfinding in approximately 1 millisecond, while the QAOA simulator averaged approximately 0.9525 seconds.
+Classical (all 6 layouts):
+Average energy: 14.2
+Average calculation time: 0.0035 s
 
-These timings are not a controlled performance benchmark because the two approaches perform different amounts of computation.
+Quantum (all 6 layouts):
+Average energy: 14.2 (same)
+Average calculation time: 16.41 s
 
-Hardware Results
+The quantum calculation took the same 
+amount of energy (tiles on grid) to get to 
+the goal.
 
-The project completed six hardware experiments across two sets of three warehouse scenarios using IBM's ibm_marrakesh processor.
+Quantum calculations were slower by a factor
+of 4,689 times bigger than the classical
+calculation times, most likely due to long 
+connectivity time to the IBM quantum 
+computer.
 
-Each experiment used 1,024 measurement shots. The number of binary variables varied depending on how many candidate routes were generated for each scenario.
-
-The measurement results contained both valid and invalid route selections. This demonstrates a limitation of the current hardware implementation, which relies on classical filtering to identify valid outcomes.
-
-This project does not demonstrate quantum advantage. The QAOA implementation operates on a small route-selection problem, and its performance is compared with a classical approach. The results are intended to explore the potential and limitations of quantum optimization for warehouse robotics.
+The classical and quantum methods took
+slightly different paths to reach the goal, 
+however they were the same amount of 
+energy used when the methods 
+were compared.
